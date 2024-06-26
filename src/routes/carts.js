@@ -1,15 +1,36 @@
-/* */
-
 import express from 'express';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 const router = express.Router();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const filePath = path.join(__dirname, '../data/carts.json');
 
-let carts = [];
+// Leer json
+const readData = () => {
+    try {
+        const dataBuffer = fs.readFileSync(filePath);
+        const dataJSON = dataBuffer.toString();
+        return JSON.parse(dataJSON);
+    } catch (e) {
+        return [];
+    }
+};
 
-/*La ruta raíz POST / deberá crear un nuevo carrito con la siguiente estructura:
+// Escribir json
+const writeData = (data) => {
+    const dataJSON = JSON.stringify(data, null, 2);
+    fs.writeFileSync(filePath, dataJSON);
+};
+
+let carts = readData();
+
+/* La ruta raíz POST / deberá crear un nuevo carrito con la siguiente estructura:
 Id:Number/String 
 products: Array que contendrá objetos que representen cada producto
- */
+*/
 router.post('/', (req, res) => {
     const { id, products = [] } = req.body;
     if (!id) {
@@ -17,17 +38,16 @@ router.post('/', (req, res) => {
     }
     const newCart = { id, products };
     carts.push(newCart);
+    writeData(carts); // Save the updated carts array
     res.status(201).json(newCart);
 });
 
-/*listado actual de carts */
-
+/* Listado actual de carts */
 router.get('/', (req, res) => {
     res.json(carts);
 });
 
-/* La ruta GET /:cid deberá listar los productos que pertenezcan al carrito con el parámetro cid proporcionados.*/
-
+/* La ruta GET /:cid deberá listar los productos que pertenezcan al carrito con el parámetro cid proporcionados. */
 router.get('/:cid', (req, res) => {
     const cart = carts.find(c => c.id == req.params.cid);
     if (cart) {
@@ -37,8 +57,7 @@ router.get('/:cid', (req, res) => {
     }
 });
 
-/* La ruta POST  /:cid/product/:pid deberá agregar el producto al arreglo “products” del carrito seleccionado, agregándose como un objeto bajo el siguiente formato:*/
-
+/* La ruta POST /:cid/product/:pid deberá agregar el producto al arreglo “products” del carrito seleccionado, agregándose como un objeto bajo el siguiente formato: */
 router.post('/:cid/product/:pid', (req, res) => {
     const cart = carts.find(c => c.id == req.params.cid);
     if (!cart) {
@@ -51,9 +70,8 @@ router.post('/:cid/product/:pid', (req, res) => {
     } else {
         cart.products.push({ product: req.params.pid, quantity: 1 });
     }
+    writeData(carts);
     res.json(cart);
 });
 
 export default router;
-
-

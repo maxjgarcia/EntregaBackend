@@ -1,18 +1,39 @@
 import express from 'express';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
 const router = express.Router();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const filePath = path.join(__dirname, '../data/products.json');
 
-let products = [];
+// Leer json
+const readData = () => {
+    try {
+        const dataBuffer = fs.readFileSync(filePath);
+        const dataJSON = dataBuffer.toString();
+        return JSON.parse(dataJSON);
+    } catch (e) {
+        return [];
+    }
+};
 
+// Escribir js
+const writeData = (data) => {
+    const dataJSON = JSON.stringify(data, null, 2);
+    fs.writeFileSync(filePath, dataJSON);
+};
 
-/* La ruta raíz GET / deberá listar todos los productos de la base. (Incluyendo la limitación ?limit del desafío anterio */
+let products = readData();
+
+/* La ruta raíz GET / deberá listar todos los productos de la base. (Incluyendo la limitación ?limit del desafío anterior) */
 router.get('/', (req, res) => {
     const limit = parseInt(req.query.limit) || products.length;
     res.json(products.slice(0, limit));
 });
 
-
-/*La ruta GET /:pid deberá traer sólo el producto con el id proporcionado*/
-
+/* La ruta GET /:pid deberá traer sólo el producto con el id proporcionado */
 router.get('/:pid', (req, res) => {
     const product = products.find(p => p.id == req.params.pid);
     if (product) {
@@ -22,40 +43,34 @@ router.get('/:pid', (req, res) => {
     }
 });
 
-/* La ruta raíz POST / deberá agregar un nuevo producto con los campos:
-id: Number/String 
-title:String,
-description:String
-code:String
-price:Number
-status:Boolean
-stock:Number
-category:String
-thumbnails:Array de Strings
-Status es true por defecto
-odos los campos son obligatorios, a excepción de thumbnails
-*/
-
+/* La ruta raíz POST / deberá agregar un nuevo producto */
 router.post('/', (req, res) => {
-    const { id, title, description, code, price, status = true, stock, category, thumbnails = [] } = req.body;
-    if (!id || !title || !description || !code || !price || !stock || !category) {
+    const { title, description, code, price, status = true, stock, category, thumbnails = [] } = req.body;
+    if (!title || !description || !code || !price || !stock || !category) {
         return res.status(400).send('All fields are required except thumbnails');
     }
+
+    // Creador de id modificado
+    const newId = products.length ? Math.max(...products.map(p => p.id)) + 1 : 1;
+
     const newProduct = {
-        id: products.length ? products[products.length - 1].id + 1 : 1,
+        id: newId,
         title,
         description,
-        code, price,
+        code,
+        price,
         status,
         stock,
         category,
         thumbnails
     };
+
     products.push(newProduct);
+    writeData(products);
     res.status(201).json(newProduct);
 });
 
-/*La ruta PUT /:pid deberá tomar un producto y actualizarlo por los campos enviados desde body. NUNCA se debe actualizar o eliminar el id al momento de hacer dicha actualización.*/
+/* La ruta PUT /:pid deberá actualizar un producto */
 router.put('/:pid', (req, res) => {
     const { pid } = req.params;
     const { id, ...updateData } = req.body;
@@ -70,17 +85,19 @@ router.put('/:pid', (req, res) => {
     });
 
     if (productFound) {
+        writeData(products);
         res.json(products.find(p => p.id == pid));
     } else {
         res.status(404).send('product not found');
     }
 });
 
-/*La ruta DELETE /:pid deberá eliminar el producto con el pid indicado*/
+/* La ruta DELETE /:pid deberá eliminar el producto con el pid indicado */
 router.delete('/:pid', (req, res) => {
     const index = products.findIndex(p => p.id == req.params.pid);
     if (index !== -1) {
         products.splice(index, 1);
+        writeData(products);
         res.status(204).send();
     } else {
         res.status(404).send('product not found');
@@ -88,5 +105,3 @@ router.delete('/:pid', (req, res) => {
 });
 
 export default router;
-
-
