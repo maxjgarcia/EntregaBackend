@@ -40,5 +40,19 @@
       "Img-Url-1",
       "Img-Url-2"
     ]
+  },
+  {
+    "id": 4,
+    "title": "cortina",
+    "description": "cortina amarilla",
+    "code": "code TT",
+    "price": 1,
+    "status": true,
+    "stock": 1,
+    "category": "Cat 1",
+    "thumbnails": [
+      "Img-Url-1",
+      "Img-Url-2"
+    ]
   }
 ]

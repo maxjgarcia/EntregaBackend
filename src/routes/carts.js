@@ -11,8 +11,8 @@ const filePath = path.join(__dirname, '../data/carts.json');
 // Leer json
 const readData = () => {
     try {
-        const dataBuffer = fs.readFileSync(filePath);
-        const dataJSON = dataBuffer.toString();
+        const dataStorage = fs.readFileSync(filePath, 'utf-8');
+        const dataJSON = dataStorage.toString();
         return JSON.parse(dataJSON);
     } catch (e) {
         return [];
@@ -22,7 +22,7 @@ const readData = () => {
 // Escribir json
 const writeData = (data) => {
     const dataJSON = JSON.stringify(data, null, 2);
-    fs.writeFileSync(filePath, dataJSON);
+    fs.writeFileSync(filePath, dataJSON, 'utf-8');
 };
 
 let carts = readData();
